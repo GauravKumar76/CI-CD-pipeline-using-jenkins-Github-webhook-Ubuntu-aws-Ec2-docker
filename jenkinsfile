@@ -19,13 +19,11 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                docker build -t $IMAGE_NAME .
-                '''
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
-        stage('Stop and Remove Previous Container') {
+        stage('Stop & Remove Old Container') {
             steps {
                 sh '''
                 docker stop $CONTAINER_NAME || true
@@ -34,7 +32,7 @@ pipeline {
             }
         }
 
-        stage('Run Docker Container') {
+        stage('Run New Container') {
             steps {
                 sh '''
                 docker run -d \
@@ -47,11 +45,22 @@ pipeline {
 
         stage('Send Email Notification') {
             steps {
-                emailext(
-                    subject: 'NestJS App Deployed Successfully on EC2!',
-                    body: 'Your NestJS app is deployed successfully.\nURL: http://52.212.75.215:3000/',
-                    to: "${EMAIL}"
-                )
+                script {
+                    try {
+                        emailext(
+                            subject: '✅ NestJS App Deployed Successfully',
+                            body: '''
+Deployment Successful 🚀
+
+App URL:
+http://52.212.75.215:3000/
+''',
+                            to: EMAIL
+                        )
+                    } catch (err) {
+                        echo "⚠️ Email failed but deployment successful"
+                    }
+                }
             }
         }
     }
